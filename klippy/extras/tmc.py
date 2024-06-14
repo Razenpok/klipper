@@ -287,8 +287,8 @@ class TMCCommandHelper:
             value = TMCtstepHelper(self.mcu_tmc, velocity,
                                    pstepper=self.stepper)
         reg_val = self.fields.set_field(field_name, value)
-        print_time = self.printer.lookup_object('toolhead').get_last_move_time()
-        self.mcu_tmc.set_register(reg_name, reg_val, print_time)
+        # print_time = self.printer.lookup_object('toolhead').get_last_move_time()
+        self.mcu_tmc.set_register(reg_name, reg_val)
     cmd_SET_TMC_CURRENT_help = "Set the current of a TMC driver"
     def cmd_SET_TMC_CURRENT(self, gcmd):
         ch = self.current_helper
@@ -301,9 +301,9 @@ class TMCCommandHelper:
                 run_current = prev_cur
             if hold_current is None:
                 hold_current = req_hold_cur
-            toolhead = self.printer.lookup_object('toolhead')
-            print_time = toolhead.get_last_move_time()
-            ch.set_current(run_current, hold_current, print_time)
+            # toolhead = self.printer.lookup_object('toolhead')
+            # print_time = toolhead.get_last_move_time()
+            ch.set_current(run_current, hold_current, None)
             prev_cur, prev_hold_cur, req_hold_cur, max_cur = ch.get_current()
         # Report values
         if prev_hold_cur is None:
