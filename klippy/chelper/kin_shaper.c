@@ -78,12 +78,12 @@ static inline double
 get_axis_position_across_moves(struct move *m, int axis, double time)
 {
     while (likely(time < 0.)) {
-        m = list_prev_entry(m, node);
+        m = ulist_prev_entry(m);
         time += m->move_t;
     }
     while (likely(time > m->move_t)) {
         time -= m->move_t;
-        m = list_next_entry(m, node);
+        m = ulist_next_entry(m);
     }
     return get_axis_position(m, axis, time);
 }

@@ -1,7 +1,7 @@
 #ifndef TRAPQ_H
 #define TRAPQ_H
 
-#include "list.h" // list_node
+#include <stdint.h>
 
 struct coord {
     union {
@@ -12,16 +12,28 @@ struct coord {
     };
 };
 
+struct ulist_node {
+    uint16_t is_used;
+    int16_t index;
+};
+
 struct move {
     double print_time, move_t;
     double start_v, half_accel;
     struct coord start_pos, axes_r;
 
-    struct list_node node;
+    struct ulist_node node;
+};
+
+#define ULIST_ARRAY_SIZE (512 / sizeof(struct move))
+
+struct ulist_pod {
+    struct move items[ULIST_ARRAY_SIZE];
+    struct ulist_pod *prev, *next;
 };
 
 struct trapq {
-    struct list_head moves, history;
+    struct ulist_pod moves, history;
 };
 
 struct pull_move {
@@ -31,7 +43,6 @@ struct pull_move {
     double x_r, y_r, z_r;
 };
 
-struct move *move_alloc(void);
 double move_get_distance(struct move *m, double move_time);
 struct coord move_get_coord(struct move *m, double move_time);
 struct trapq *trapq_alloc(void);
@@ -50,4 +61,8 @@ void trapq_set_position(struct trapq *tq, double print_time
 int trapq_extract_old(struct trapq *tq, struct pull_move *p, int max
                       , double start_time, double end_time);
 
+struct move * ulist_first_entry(struct ulist_pod *h);
+struct move * ulist_last_entry(struct ulist_pod *h);
+struct move * ulist_prev_entry(struct move *m);
+struct move * ulist_next_entry(struct move *m);
 #endif // trapq.h

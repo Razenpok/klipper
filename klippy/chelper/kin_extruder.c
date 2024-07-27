@@ -99,7 +99,7 @@ pa_range_integrate(struct move *m, double move_time
     // Integrate over previous moves
     struct move *prev = m;
     while (unlikely(start < 0.)) {
-        prev = list_prev_entry(prev, node);
+        prev = ulist_prev_entry(prev);
         start += prev->move_t;
         double base = prev->start_pos.x - start_base;
         res += pa_move_integrate(prev, pa_list, base, start
@@ -108,7 +108,7 @@ pa_range_integrate(struct move *m, double move_time
     // Integrate over future moves
     while (unlikely(end > m->move_t)) {
         end -= m->move_t;
-        m = list_next_entry(m, node);
+        m = ulist_next_entry(m);
         double base = m->start_pos.x - start_base;
         res -= pa_move_integrate(m, pa_list, base, 0., end, end);
     }

@@ -151,9 +151,9 @@ itersolve_generate_steps(struct stepper_kinematics *sk, double flush_time)
     if (!sk->tq)
         return 0;
     trapq_check_sentinels(sk->tq);
-    struct move *m = list_first_entry(&sk->tq->moves, struct move, node);
+    struct move *m = ulist_first_entry(&sk->tq->moves);
     while (last_flush_time >= m->print_time + m->move_t)
-        m = list_next_entry(m, node);
+        m = ulist_next_entry(m);
     double force_steps_time = sk->last_move_time + sk->gen_steps_post_active;
     int skip_count = 0;
     for (;;) {
@@ -166,15 +166,15 @@ itersolve_generate_steps(struct stepper_kinematics *sk, double flush_time)
                     abs_start = last_flush_time;
                 if (abs_start < force_steps_time)
                     abs_start = force_steps_time;
-                struct move *pm = list_prev_entry(m, node);
+                struct move *pm = ulist_prev_entry(m);
                 while (--skip_count && pm->print_time > abs_start)
-                    pm = list_prev_entry(pm, node);
+                    pm = ulist_prev_entry(pm);
                 do {
                     int32_t ret = itersolve_gen_steps_range(sk, pm, abs_start
                                                             , flush_time);
                     if (ret)
                         return ret;
-                    pm = list_next_entry(pm, node);
+                    pm = ulist_next_entry(pm);
                 } while (pm != m);
             }
             // Generate steps for this move
@@ -207,7 +207,7 @@ itersolve_generate_steps(struct stepper_kinematics *sk, double flush_time)
             if (flush_time + sk->gen_steps_pre_active <= move_end)
                 return 0;
         }
-        m = list_next_entry(m, node);
+        m = ulist_next_entry(m);
     }
 }
 
@@ -218,15 +218,15 @@ itersolve_check_active(struct stepper_kinematics *sk, double flush_time)
     if (!sk->tq)
         return 0.;
     trapq_check_sentinels(sk->tq);
-    struct move *m = list_first_entry(&sk->tq->moves, struct move, node);
+    struct move *m = ulist_first_entry(&sk->tq->moves);
     while (sk->last_flush_time >= m->print_time + m->move_t)
-        m = list_next_entry(m, node);
+        m = ulist_next_entry(m);
     for (;;) {
         if (check_active(sk, m))
             return m->print_time;
         if (flush_time <= m->print_time + m->move_t)
             return 0.;
-        m = list_next_entry(m, node);
+        m = ulist_next_entry(m);
     }
 }
 
