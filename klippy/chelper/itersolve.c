@@ -24,11 +24,17 @@ struct timepos {
 
 #define SEEK_TIME_RESET 0.000100
 
+#include <stdio.h> // memset
+
+static char message[128];
+
 // Generate step times for a portion of a move
 static int32_t
 itersolve_gen_steps_range(struct stepper_kinematics *sk, struct move *m
                           , double abs_start, double abs_end)
 {
+    if (sk->pre_cb)
+        sk->pre_cb(sk);
     sk_calc_callback calc_position_cb = sk->calc_position_cb;
     double half_step = .5 * sk->step_dist;
     double start = abs_start - m->print_time, end = abs_end - m->print_time;
@@ -43,7 +49,12 @@ itersolve_gen_steps_range(struct stepper_kinematics *sk, struct move *m
     double last_time=start, low_time=start, high_time=start + SEEK_TIME_RESET;
     if (high_time > end)
         high_time = end;
+    int counter = 0;
     for (;;) {
+        counter++;
+        //sprintf(message, "guess #%i\n", counter);
+        //log_message(message);
+        // printf("guess #%i\n", counter);
         // Use the "secant method" to guess a new time from previous guesses
         double guess_dist = guess.position - target;
         double og_dist = old_guess.position - target;
@@ -127,6 +138,32 @@ itersolve_gen_steps_range(struct stepper_kinematics *sk, struct move *m
     return 0;
 }
 
+#include <fcntl.h>   // For open()
+#include <unistd.h>  // For write() and close()
+#include <stdio.h>
+#include <string.h>
+
+#define LOG_BUFFER_SIZE 4096
+static int fdfdfd = -99;
+static char log_buffer[LOG_BUFFER_SIZE];
+static size_t log_buffer_index = 0;
+
+void flush_log_buffer() {
+    return;
+    if (log_buffer_index > 0) {
+        write(fdfdfd, log_buffer, log_buffer_index);
+        log_buffer_index = 0;
+    }
+}
+
+void log_message(const char *message) {
+    return;
+    size_t message_len = strlen(message);
+    memcpy(log_buffer + log_buffer_index, message, message_len);
+    log_buffer_index += message_len;
+    flush_log_buffer();
+}
+
 
 /****************************************************************
  * Interface functions
@@ -146,6 +183,8 @@ check_active(struct stepper_kinematics *sk, struct move *m)
 int32_t __visible
 itersolve_generate_steps(struct stepper_kinematics *sk, double flush_time)
 {
+    //if (fdfdfd == -99)
+    //    fdfdfd = open("/tmp/get_axis_position_debug.log", O_WRONLY | O_APPEND | O_CREAT, 0644);
     double last_flush_time = sk->last_flush_time;
     sk->last_flush_time = flush_time;
     if (!sk->tq)
@@ -263,7 +302,16 @@ itersolve_calc_position_from_coord(struct stepper_kinematics *sk
     m.start_pos.y = y;
     m.start_pos.z = z;
     m.move_t = 1000.;
-    return sk->calc_position_cb(sk, &m, 500.);
+    //sprintf(message, "itersolve_calc_position_from_coord\n");
+    //log_message(message);
+    if (sk->pre_cb) {
+        sk->pre_cb(sk);
+    }
+    double result = sk->calc_position_cb(sk, &m, 500.);
+    if (sk->post_cb) {
+        sk->post_cb(sk);
+    }
+    return result;
 }
 
 void __visible

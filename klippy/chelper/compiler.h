@@ -43,4 +43,7 @@
             (((x) + ((__divisor) / 2)) / (__divisor));  \
         })
 
+void flush_log_buffer();
+void log_message(const char *message);
+
 #endif // compiler.h
